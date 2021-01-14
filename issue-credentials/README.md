@@ -10,7 +10,7 @@ Right now the types issued are:
 ## General
 
 ```yml
-- uses: principlesos/actions/issue-credentials@v1.0
+- uses: principlesos/actions/issue-credentials@v1
   with:
     base_url: ${{ secrets.CREDENTIALS_BROKER_URL }}
     type: kubernetes

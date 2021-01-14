@@ -1,0 +1,34 @@
+# action.yaml
+name: 'Issues Deployment Credentials for Principles'
+description: 'Checks github job meets security standars for deployment then sets requested credentials if approved'
+inputs:
+  type:
+    description: 'Type of credentials requestd ("kubernetes", "terraform")'
+    required: true
+  environment:
+    description: 'Environment to access ("box", "dev", "stg", "prd")'
+    required: true
+  cluster_name:
+    description: 'Cluster requiring credentials for (ex. eks-0-box60-principles-com)'
+    required: true
+  permissions_level:
+    description: 'Level of access required ("read-only" or "read-write")'
+    required: true
+  base_url:
+    description: 'Url endpoint before arguments'
+    required: true
+  aws_region:
+    description: 'Region for AWS'
+    required: true
+    default: 'us-east-1'
+  gh_token:
+    description: 'GH repo token'
+    required: true
+    default: ${{ github.token }}
+  gh_job:
+    description: 'GH job name calling action'
+    required: true
+    default: ${{ github.job }}
+runs:
+  using: 'node12'
+  main: 'lib/issue_credentials.js'

@@ -1,0 +1,5 @@
+# These owners will be the default owners for everything in
+# the repo. Unless a later match takes precedence,
+# @principlesos/security and @principlesos/circle-of-trust will be requested for
+# review when someone opens a pull request. Only they can approve PRs to merge into main
+*       @principlesos/security @principlesos/circle-of-trust

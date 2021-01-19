@@ -39,7 +39,10 @@ async function getGithubRunIDJobs() {
 }
 
 function getGhJob(runJson) {
-    const jobName = core.getInput('gh_job');
+    const job = core.getInput('gh_job');
+    console.log('Job: ', job)
+    console.log(runJson)
+    const jobName = job
     return runJson.jobs.find(j => j.name == jobName && j.status == "in_progress")
 }
 
@@ -102,7 +105,7 @@ async function getAwsCliPath() {
 }
 
 async function run() {
-    await new Promise(resolve => setTimeout(resolve, 1500));
+    await new Promise(resolve => setTimeout(resolve, 2500));
     let gh = await getGithubRunIDJobs()
     let job = getGhJob(gh)
     let step = job.steps.find(s => s.status == "in_progress")

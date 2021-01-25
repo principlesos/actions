@@ -10,7 +10,7 @@ inputs:
     required: true
   cluster_name:
     description: 'Cluster requiring credentials for (ex. eks-0-box60-principles-com)'
-    required: true
+    required: false
   permissions_level:
     description: 'Level of access required ("read-only" or "read-write")'
     required: true

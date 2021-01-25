@@ -24,6 +24,7 @@ Unfortunately it cant be as a default input so does need to be supplied in the "
 types available:
 * kubernetes
 * terraform
+    * `cluster_name` is not required for terraform type as it is implicit in the AWS credentials
 
 environment and cluster_name follows our standard infrastructure naming conventions
 
@@ -32,6 +33,12 @@ Permissions levels available:
 * read-only
 
 Optional Parameters with default vaules (do not input other values unless you really know why you're doing it):
+NOTE: If you are giving your job a name via the the optional name parameter in `build.yml`, you NEED to provide that name via the action parameters.
+```yml
+    example_job:
+        name: A Different name than 'example_job'
+```
+
 ```yml
     aws_region: us-east-1
     gh_token: ${{ github.token }}

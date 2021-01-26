@@ -5,7 +5,8 @@ This GitHub Action sets a number of envvars needed throughout the build process
 ## General
 
 ```yml
-- uses: principlesos/actions/set-envars@v1.3
+- name: configure and save tags
+  uses: principlesos/actions/set-envars@v1.3
 ```
 NOTE: Three variables need to be set at the project level:
 ```yml
@@ -16,7 +17,7 @@ env:
 ```
 
 
-### Envvars Written Out
+### Envvars Set
 * BRANCH_NAME - The name of the branch
 * SANITIZED_BRANCH_NAME -  tr -cd [:alnum:] of the BRANCH_NAME
 * TAG_PREFIX - if main ref adds "v",  if anything else, uses $SANITIZED_BRANCH_NAME

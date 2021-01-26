@@ -1,0 +1,44 @@
+# action.yaml
+name: 'Configures Envars for Principles'
+description: 'Checks github job meets security standars for deployment then sets requested credentials if approved'
+runs:
+  using: "composite"
+  steps:
+    - id: get_branch_name
+      run: |
+        BRANCH_NAME=$(echo ${{ github.ref }} | cut -d '/' -f 3- --output-delimiter='/')
+        echo "BRANCH_NAME=$BRANCH_NAME" >> $GITHUB_ENV
+      shell: bash
+    - id: configure_tag
+      run: |
+        echo "SANITIZED_BRANCH_NAME=$(echo ${{env.BRANCH_NAME}} | tr -cd '[:alnum:]')"  >> $GITHUB_ENV
+        if [ "${GITHUB_REF}" = "refs/heads/main" ]; then
+          echo 'TAG_PREFIX=v' >> $GITHUB_ENV
+          echo 'DRY_RUN=false' >> $GITHUB_ENV
+        else
+          echo 'TAG_PREFIX='$(echo ${{env.BRANCH_NAME}} | tr -cd '[:alnum:]') >> $GITHUB_ENV
+          echo 'DRY_RUN=true' >> $GITHUB_ENV
+        fi
+      shell: bash
+    - id: save_tag
+      run: |
+        COMPUTED_TAG=$(echo ${{env.SANITIZED_BRANCH_NAME}}-${{ env.IMAGE_VERSION }}-${{ github.sha }})
+        echo "COMPUTED_TAG=$COMPUTED_TAG" >> build_data.env
+        echo "VERSION=$(echo ${{ env.IMAGE_VERSION }})" >> build_data.env
+        echo "SHORT_TAG=$(echo  ${{env.SANITIZED_BRANCH_NAME}}-${{ env.IMAGE_VERSION }})" >> build_data.env
+        echo "JFROG_CLI_BUILD_URL=https://github.com/${{ github.repository }}/commit/${{ github.sha }}/checks" >> $GITHUB_ENV
+        echo "BUILD_INFO=$(echo ${{env.SANITIZED_BRANCH_NAME}}-${{ env.IMAGE_VERSION }}-${{ github.run_number }}-${{ github.sha }})" >> build_data.env
+        echo "JFROG_CLI_BUILD_NAME=${PROJECT_NAME}" >> build_data.env
+        echo "JFROG_CLI_OFFER_CONFIG='false'" >> build_data.env
+        echo "JFROG_CLI_USER_AGENT=github-actions-${{ github.actor }}" >> build_data.env
+        echo "JFROG_CLI_ENV_EXCLUDE='*password*;*secret*;*key*;*token*;JF_ARTIFACTORY_*'" >> build_data.env
+        echo "JFROG_CLI_BUILD_NUMBER=$(echo ${{env.SANITIZED_BRANCH_NAME}}-${{ env.IMAGE_VERSION }}-${{ github.sha }})" >> build_data.env
+        cat build_data.env >> $GITHUB_ENV
+
+      shell: bash
+    - id: save_DOCKER_FQIN
+      run: |
+        DOCKER_FQIN=${DOCKER_LOGIN_SERVER}/${PROJECT_NAME}:${COMPUTED_TAG}
+        echo "DOCKER_FQIN=$DOCKER_FQIN" >> $GITHUB_ENV
+        echo "DOCKER_FQIN=$DOCKER_FQIN" >> build_data.env
+      shell: bash

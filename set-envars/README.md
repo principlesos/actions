@@ -1,6 +1,6 @@
-# Get Deployment Credentials
+# Set Environment Variables
 
-This GitHub Action sets a number of envvars needed throughout the build process
+This GitHub Action sets a number of envvars needed throughout the principles build process
 
 ## General
 
@@ -11,7 +11,7 @@ This GitHub Action sets a number of envvars needed throughout the build process
 NOTE: Three variables need to be set at the project level:
 ```yml
 env:
-  PROJECT_NAME:             example/gh-app-test
+  PROJECT_NAME:             example/gh-test-app
   DOCKER_LOGIN_SERVER:      ***-docker-all.jfrog.io
   IMAGE_VERSION:            1.0.0
 ```

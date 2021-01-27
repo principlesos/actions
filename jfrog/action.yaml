@@ -1,0 +1,48 @@
+# action.yaml
+name: 'Push and scan build info'
+description: 'Installs and uses jfrog CLI to push docker image and build info for previously built Docker image then scan it for vulnerabilities'
+inputs:
+  docker-fqin:
+    description: 'Tag for the docker image'
+    required: true
+    default: ${DOCKER_FQIN}
+  build-name:
+    description: 'Name of the project - Typically set at environment level'
+    required: true
+    default: ${PROJECT_NAME}
+  build-number:
+    description: 'Build number for Jfrog indexing, use default value'
+    required: true
+    default: ${COMPUTED_TAG}
+  jf-token:
+    description: 'Login token for Jfrog environemnet. Set via secret'
+    required: true
+  jf-tenant:
+    description: 'Which docker environment to use. Set to standard secret'
+    required: true
+  jf-repo:
+    description: 'Which docker repo to use. Set to standard secret'
+    required: true
+  skip-scan:
+    description: 'Set to true to override scan step'
+    required: false
+runs:
+  using: "composite"
+  steps:
+    - run: |
+        wget -qO - https://releases.jfrog.io/artifactory/api/gpg/key/public | sudo apt-key add -;
+        echo "deb https://releases.jfrog.io/artifactory/jfrog-debs xenial contrib" | sudo tee -a /etc/apt/sources.list;
+        sudo apt update;
+        sudo apt install -y jfrog-cli;
+
+        jfrog rt c import ${{ inputs.jf-token }} --interactive=false
+        jfrog rt use ${{ inputs.jf-tenant }}
+        jfrog rt dp ${{ inputs.docker-fqin }} ${{ inputs.jf-repo }} --build-name=${{ inputs.build-name }} --build-number=${{ inputs.build-number }}
+        jfrog rt bp ${{ inputs.build-name }} ${{ inputs.build-number }}
+        echo ${{ inputs.skip-scan }}
+        if [[ ${{ inputs.skip-scan }} == "true" ]]; then
+          echo "Skipping scan request. Report can still be viewed in Jfrog. You wont be able to promote to prod without a passing scan"
+        else
+          jfrog rt bs ${{ inputs.build-name }} ${{ inputs.build-number }}
+        fi
+      shell: bash

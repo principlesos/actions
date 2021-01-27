@@ -12,10 +12,27 @@ This GitHub Action pushes a previously built docker image & its associated build
     jf-repo: ${{ secrets.JFROG_DEV_REPO }}
     jf-tenant: ${{ secrets.JFROG_TENANT }}
 ```
-NOTE: One variables needs to be set at the project level:
+NOTE: Several variables need to be set prior to the step or manually input (see multiple image example below):
 ```yml
-env:
-  PROJECT_NAME: example/gh-app-test
+  PROJECT_NAME: Your project name. Will be logged for build name.
+  DOCKER_FQIN: tag for the docker image
+  COMPUTED_TAG: A identifier unique to the build-name used as the "build-number". Different from the docker tag
+  SANITIZED_BRANCH_NAME: A clean branch name
+  IMAGE_VERSION: Semver for the build
+```
+
+IF BUILDING MULTIPLE IMAGES IN THE SAME JOB:
+- It is reccomended you manually override some of the implicit parameters to avoid image confusion
+- ex:
+```yml
+- uses: principlesos/actions/jfrog-image-push-and-scan@v1.3.1
+  with:
+    jf-token: ${{ secrets.JFROG_SERVER_TOKEN }}
+    jf-repo: ${{ secrets.JFROG_DEV_REPO }}
+    jf-tenant: ${{ secrets.JFROG_TENANT }}
+    build-name: specific name for this particular image
+    build-number: some identifier unique to the build name. Can be shared between builds if you want to link them
+    docker-fqin: Tag on the docker image you want to push and scan
 ```
 
 ### Optional Parameters:
@@ -32,30 +49,12 @@ A passing scan is a requirement for deployment, so it is reccomended you DO NOT 
     skip-scan: true
 ```
 
-Additionally the `set-envars` action needs to be run BEFORE any Docker Build Step. Docker Images need to be built BEFORE this action
+Parameters and their default values:
 
-### For a working example reference the below:
 ```yml
-      - name: Configure and Save Envvars
-        uses: principlesos/actions/set-envvars@v1.3.1
-
-      - name: Docker Build & Tag app
-        run: |
-          docker build \
-            --file  Dockerfile \
-            --label git.repo=${{ github.repository }} \
-            --label git.ref=${{ github.ref }} \
-            --label git.sha=${{ github.sha }} \
-            --label project.semver=${VERSION} \
-            --label project.tag=${SHORT_TAG} \
-            --label build-name=${PROJECT_NAME} \
-            --label build-number=${{ github.run_number }} \
-            --tag ${DOCKER_FQIN} \
-            .
-
-      - uses: principlesos/actions/jfrog-image-push-and-scan@v1.3.1
-        with:
-          jf-token: ${{ secrets.JFROG_SERVER_TOKEN }}
-          jf-repo: ${{ secrets.JFROG_DEV_REPO }}
-          jf-tenant: ${{ secrets.JFROG_TENANT }}
+docker-fqin: ${DOCKER_FQIN}
+build-name: ${PROJECT_NAME}
+build-number: ${COMPUTED_TAG}
+branch-name: ${SANITIZED_BRANCH_NAME}
+image-version: ${IMAGE_VERSION}
 ```

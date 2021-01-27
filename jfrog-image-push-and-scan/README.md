@@ -6,7 +6,7 @@ This GitHub Action pushes a previously built docker image & its associated build
 
 ### Usage
 ```yml
-- uses: principlesos/actions/jfrog-image-push-and-scan@v1.3
+- uses: principlesos/actions/jfrog-image-push-and-scan@v1.3.1
   with:
     jf-token: ${{ secrets.JFROG_SERVER_TOKEN }}
     jf-repo: ${{ secrets.JFROG_DEV_REPO }}
@@ -24,7 +24,7 @@ env:
 A passing scan is a requirement for deployment, so it is reccomended you DO NOT skip scanning even in lower environments as it is easier to fail early and fix things then.
 
 ```yml
-- uses: principlesos/actions/jfrog-image-push-and-scan@v1.3
+- uses: principlesos/actions/jfrog-image-push-and-scan@v1.3.1
   with:
     jf-token: ${{ secrets.JFROG_SERVER_TOKEN }}
     jf-repo: ${{ secrets.JFROG_DEV_REPO }}
@@ -37,7 +37,7 @@ Additionally the `set-envars` action needs to be run BEFORE any Docker Build Ste
 ### For a working example reference the below:
 ```yml
       - name: Configure and Save Envvars
-        uses: principlesos/actions/set-envvars@v1.3
+        uses: principlesos/actions/set-envvars@v1.3.1
 
       - name: Docker Build & Tag app
         run: |
@@ -53,7 +53,7 @@ Additionally the `set-envars` action needs to be run BEFORE any Docker Build Ste
             --tag ${DOCKER_FQIN} \
             .
 
-      - uses: principlesos/actions/jfrog-image-push-and-scan@v1.3
+      - uses: principlesos/actions/jfrog-image-push-and-scan@v1.3.1
         with:
           jf-token: ${{ secrets.JFROG_SERVER_TOKEN }}
           jf-repo: ${{ secrets.JFROG_DEV_REPO }}

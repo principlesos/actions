@@ -7,7 +7,7 @@ This GitHub Action sets a number of envvars needed throughout the principles bui
 ### Usage
 ```yml
 - name: configure and save tags
-  uses: principlesos/actions/set-envvars@v1.3
+  uses: principlesos/actions/set-envvars@v1.3.1
 ```
 NOTE: Three variables need to be set at the project level:
 ```yml

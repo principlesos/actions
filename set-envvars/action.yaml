@@ -30,7 +30,6 @@ runs:
         echo "BUILD_INFO=$(echo ${{env.SANITIZED_BRANCH_NAME}}-${{ env.IMAGE_VERSION }}-${{ github.run_number }}-${{ github.sha }})" >> build_data.env
         echo "JFROG_CLI_BUILD_NAME=${PROJECT_NAME}" >> build_data.env
         echo "JFROG_CLI_OFFER_CONFIG='false'" >> build_data.env
-        echo "JFROG_CLI_USER_AGENT=github-actions-${{ github.actor }}" >> build_data.env
         echo "JFROG_CLI_ENV_EXCLUDE='*password*;*secret*;*key*;*token*;JF_ARTIFACTORY_*'" >> build_data.env
         echo "JFROG_CLI_BUILD_NUMBER=$(echo ${{env.SANITIZED_BRANCH_NAME}}-${{ env.IMAGE_VERSION }}-${{ github.sha }})" >> build_data.env
         cat build_data.env >> $GITHUB_ENV

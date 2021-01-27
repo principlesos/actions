@@ -25,7 +25,8 @@ inputs:
     required: true
   skip-scan:
     description: 'Set to true to override scan step'
-    required: false
+    required: true
+    default: 'false'
 runs:
   using: "composite"
   steps:
@@ -39,7 +40,6 @@ runs:
         jfrog rt use ${{ inputs.jf-tenant }}
         jfrog rt dp ${{ inputs.docker-fqin }} ${{ inputs.jf-repo }} --build-name=${{ inputs.build-name }} --build-number=${{ inputs.build-number }}
         jfrog rt bp ${{ inputs.build-name }} ${{ inputs.build-number }}
-        echo ${{ inputs.skip-scan }}
         if [[ ${{ inputs.skip-scan }} == "true" ]]; then
           echo "Skipping scan request. Report can still be viewed in Jfrog. You wont be able to promote to prod without a passing scan"
         else

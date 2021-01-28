@@ -8,5 +8,4 @@ This is the home for Principles GH actions. As of 1-26-21 we have 3 actions
 
 ##  Compostite Actions - encapsulation of multiple github step shell code that can be run as a single step
 
-* Dont Use set-envvars@v1.3.1
-* jfrog-image-push-and-scan@v1.3.1
+* jfrog-image-push-and-scan@v1.3.2

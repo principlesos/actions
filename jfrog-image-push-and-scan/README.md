@@ -6,7 +6,7 @@ This GitHub Action pushes a previously built docker image & its associated build
 
 ### Usage
 ```yml
-- uses: principlesos/actions/jfrog-image-push-and-scan@v1.3.1
+- uses: principlesos/actions/jfrog-image-push-and-scan@v1.3.2
   with:
     jf-token: ${{ secrets.JFROG_SERVER_TOKEN }}
     jf-repo: ${{ secrets.JFROG_DEV_REPO }}
@@ -25,7 +25,7 @@ IF BUILDING MULTIPLE IMAGES IN THE SAME JOB:
 - It is reccomended you manually override some of the implicit parameters to avoid image confusion
 - ex:
 ```yml
-- uses: principlesos/actions/jfrog-image-push-and-scan@v1.3.1
+- uses: principlesos/actions/jfrog-image-push-and-scan@v1.3.2
   with:
     jf-token: ${{ secrets.JFROG_SERVER_TOKEN }}
     jf-repo: ${{ secrets.JFROG_DEV_REPO }}
@@ -41,7 +41,7 @@ IF BUILDING MULTIPLE IMAGES IN THE SAME JOB:
 A passing scan is a requirement for deployment, so it is reccomended you DO NOT skip scanning even in lower environments as it is easier to fail early and fix things then.
 
 ```yml
-- uses: principlesos/actions/jfrog-image-push-and-scan@v1.3.1
+- uses: principlesos/actions/jfrog-image-push-and-scan@v1.3.2
   with:
     jf-token: ${{ secrets.JFROG_SERVER_TOKEN }}
     jf-repo: ${{ secrets.JFROG_DEV_REPO }}

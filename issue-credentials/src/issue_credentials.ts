@@ -16,7 +16,10 @@ async function getAwsCredentials(job, step) {
     const BASE_URL = core.getInput('base_url', {required: true})
     const url = `${BASE_URL}/${type}/${environment}/${repo}/${job.id}/${context.runId}/${step.number}/${permissionsLevel}`
     console.log('Calling Credentials Endpoint')
-    const response = await fetch(url)
+    const response : Response = await fetch(url)
+    if (!response.ok){
+        console.log(response)
+    }
     const body = await response.json()
     return body
 }
@@ -47,11 +50,16 @@ function getGhJob(runJson) {
 }
 
 function setAwsCredentials(credentials) {
-    core.exportVariable('AWS_ACCESS_KEY_ID', credentials.accessKeyId);
-    core.exportVariable('AWS_SECRET_ACCESS_KEY', credentials.secretAccessKey);
-    core.exportVariable('AWS_DEFAULT_REGION', core.getInput('aws_region', {required: true}));
-    core.exportVariable('AWS_SESSION_TOKEN', credentials.sessionToken);
-    console.log("AWS session credentials set")
+    if(!credentials.accessKeyId){
+        console.log("AWS credentials missing, not setting")
+    }
+    else{
+        core.exportVariable('AWS_ACCESS_KEY_ID', credentials.accessKeyId);
+        core.exportVariable('AWS_SECRET_ACCESS_KEY', credentials.secretAccessKey);
+        core.exportVariable('AWS_DEFAULT_REGION', core.getInput('aws_region', {required: true}));
+        core.exportVariable('AWS_SESSION_TOKEN', credentials.sessionToken);
+        console.log("AWS session credentials set")
+    }
 }
 
 async function setEksConfig() {
@@ -110,7 +118,7 @@ async function run() {
     let job = getGhJob(gh)
     let step = job.steps.find(s => s.status == "in_progress")
     let result = await getAwsCredentials(job, step);
-    setAwsCredentials(result)
+    setAwsCredentials(result.credentials)
     let type = core.getInput('type', {required: true}).toLowerCase()
     if (type == "kubernetes"){
         setEksConfig()

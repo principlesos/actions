@@ -35,6 +35,10 @@ inputs:
     description: 'Set to true to override scan step'
     required: true
     default: 'false'
+  skip-image-push:
+    description: 'Set to true to override docker image push'
+    required: true
+    default: 'false'
 runs:
   using: "composite"
   steps:
@@ -55,7 +59,13 @@ runs:
 
         jfrog rt c import ${{ inputs.jf-token }} --interactive=false
         jfrog rt use ${{ inputs.jf-tenant }}
-        jfrog rt dp ${{ inputs.docker-fqin }} ${{ inputs.jf-repo }} --build-name=${{ inputs.build-name }} --build-number=${{ inputs.build-number }}
+
+        if [[ ${{ inputs.skip-image-push }} == "true" ]]; then
+          echo "Not pushing Docker Image. If not pushed elsewhere, this will result in failure to promote the image or thoroughly test it"
+        else
+          jfrog rt dp ${{ inputs.docker-fqin }} ${{ inputs.jf-repo }} --build-name=${{ inputs.build-name }} --build-number=${{ inputs.build-number }}
+        fi
+
         jfrog rt bp ${{ inputs.build-name }} ${{ inputs.build-number }}
         if [[ ${{ inputs.skip-scan }} == "true" ]]; then
           echo "Skipping scan request. Report can still be viewed in Jfrog. You wont be able to promote to prod without a passing scan"

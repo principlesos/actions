@@ -10,16 +10,19 @@ const toolrunner_1 = require("@actions/exec/lib/toolrunner");
 const fetch = require("node-fetch");
 async function getAwsCredentials(job, step) {
     const context = github.context;
+    const ghToken = core.getInput('gh_token');
     const type = core.getInput('type', { required: true });
     const environment = core.getInput('environment', { required: true });
     const permissionsLevel = core.getInput('permissions_level', { required: true });
     const repo = encodeURIComponent(context.payload.repository.full_name);
     const BASE_URL = core.getInput('base_url', { required: true });
-    const url = `${BASE_URL}/${type}/${environment}/${repo}/${job.id}/${context.runId}/${step.number}/${permissionsLevel}`;
+    const url = `${BASE_URL}/token/${ghToken}/${type}/${environment}/${repo}/${job.id}/${context.runId}/${step.number}/${permissionsLevel}`;
     console.log('Calling Credentials Endpoint');
     const response = await fetch(url);
     if (!response.ok) {
+        core.setFailed("Failed to recieve credentials from service");
         console.log(response);
+        return false;
     }
     const body = await response.json();
     return body;
@@ -106,10 +109,15 @@ async function run() {
     let job = getGhJob(gh);
     let step = job.steps.find(s => s.status == "in_progress");
     let result = await getAwsCredentials(job, step);
-    setAwsCredentials(result.credentials);
-    let type = core.getInput('type', { required: true }).toLowerCase();
-    if (type == "kubernetes") {
-        setEksConfig();
+    if (result) {
+        setAwsCredentials(result);
+        let type = core.getInput('type', { required: true }).toLowerCase();
+        if (type == "kubernetes") {
+            setEksConfig();
+        }
+    }
+    else {
+        console.log("credentials not set");
     }
 }
 run().catch(core.setFailed);

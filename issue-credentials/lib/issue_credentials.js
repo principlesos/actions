@@ -51,11 +51,16 @@ function getGhJob(runJson) {
     return runJson.jobs.find(j => j.name == jobName && j.status == "in_progress");
 }
 function setAwsCredentials(credentials) {
-    core.exportVariable('AWS_ACCESS_KEY_ID', credentials.accessKeyId);
-    core.exportVariable('AWS_SECRET_ACCESS_KEY', credentials.secretAccessKey);
-    core.exportVariable('AWS_DEFAULT_REGION', core.getInput('aws_region', { required: true }));
-    core.exportVariable('AWS_SESSION_TOKEN', credentials.sessionToken);
-    console.log("AWS session credentials set");
+    if (!credentials.accessKeyId) {
+        console.log("AWS credentials missing, not setting");
+    }
+    else {
+        core.exportVariable('AWS_ACCESS_KEY_ID', credentials.accessKeyId);
+        core.exportVariable('AWS_SECRET_ACCESS_KEY', credentials.secretAccessKey);
+        core.exportVariable('AWS_DEFAULT_REGION', core.getInput('aws_region', { required: true }));
+        core.exportVariable('AWS_SESSION_TOKEN', credentials.sessionToken);
+        console.log("AWS session credentials set");
+    }
 }
 async function setEksConfig() {
     const cluster_name = core.getInput('cluster_name', { required: true });
@@ -110,6 +115,9 @@ async function run() {
         if (type == "kubernetes") {
             setEksConfig();
         }
+    }
+    else {
+        console.log("credentials not set");
     }
 }
 run().catch(core.setFailed);

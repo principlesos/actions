@@ -53,11 +53,18 @@ function getGhJob(runJson) {
 }
 
 function setAwsCredentials(credentials) {
-    core.exportVariable('AWS_ACCESS_KEY_ID', credentials.accessKeyId);
-    core.exportVariable('AWS_SECRET_ACCESS_KEY', credentials.secretAccessKey);
-    core.exportVariable('AWS_DEFAULT_REGION', core.getInput('aws_region', {required: true}));
-    core.exportVariable('AWS_SESSION_TOKEN', credentials.sessionToken);
-    console.log("AWS session credentials set")
+    if (!credentials.accessKeyId) {
+        console.log("AWS credentials missing, not setting");
+    }
+    else{
+        core.exportVariable('AWS_ACCESS_KEY_ID', credentials.accessKeyId);
+        core.exportVariable('AWS_SECRET_ACCESS_KEY', credentials.secretAccessKey);
+        core.exportVariable('AWS_DEFAULT_REGION', core.getInput('aws_region', {required: true}));
+        core.exportVariable('AWS_SESSION_TOKEN', credentials.sessionToken);
+        console.log("AWS session credentials set")
+    }
+
+
 }
 
 async function setEksConfig() {
@@ -122,6 +129,9 @@ async function run() {
         if (type == "kubernetes"){
             setEksConfig()
         }
+    }
+    else{
+        console.log("credentials not set")
     }
 
 }

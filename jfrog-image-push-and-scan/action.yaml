@@ -52,21 +52,18 @@ runs:
         cat build_data.env >> $GITHUB_ENV
       shell: bash
     - run: |
-        wget -qO - https://releases.jfrog.io/artifactory/api/gpg/key/public | sudo apt-key add -;
-        echo "deb https://releases.jfrog.io/artifactory/jfrog-debs xenial contrib" | sudo tee -a /etc/apt/sources.list;
-        sudo apt update;
-        sudo apt install -y jfrog-cli;
+        wget https://releases.jfrog.io/artifactory/jfrog-debs/pool/jfrog-cli/jfrog-cli-1.44.0.x86_64.deb
+
+        sudo apt update
+        sudo dpkg -i ./jfrog-cli-1.44.0.x86_64.deb
+        sudo apt-get install -f
 
         jfrog rt c import ${{ inputs.jf-token }} --interactive=false
         jfrog rt use ${{ inputs.jf-tenant }}
 
-        if [[ ${{ inputs.skip-image-push }} == "true" ]]; then
-          echo "Not pushing Docker Image. If not pushed elsewhere, this will result in failure to promote the image or thoroughly test it"
-        else
-          jfrog rt dp ${{ inputs.docker-fqin }} ${{ inputs.jf-repo }} --build-name=${{ inputs.build-name }} --build-number=${{ inputs.build-number }}
-        fi
-
+        jfrog rt dp ${{ inputs.docker-fqin }} ${{ inputs.jf-repo }} --build-name=${{ inputs.build-name }} --build-number=${{ inputs.build-number }}
         jfrog rt bp ${{ inputs.build-name }} ${{ inputs.build-number }}
+
         if [[ ${{ inputs.skip-scan }} == "true" ]]; then
           echo "Skipping scan request. Report can still be viewed in Jfrog. You wont be able to promote to prod without a passing scan"
         else

@@ -21,7 +21,7 @@ async function getAwsCredentials(job, step) {
     const response = await fetch(url);
     if (!response.ok) {
         core.setFailed("Failed to recieve credentials from service");
-        console.log(response);
+        console.log(await response.json());
         return false;
     }
     const body = await response.json();
@@ -45,8 +45,6 @@ async function getGithubRunIDJobs() {
 }
 function getGhJob(runJson) {
     const job = core.getInput('gh_job');
-    console.log('Job: ', job);
-    console.log(runJson);
     const jobName = job;
     return runJson.jobs.find(j => j.name == jobName && j.status == "in_progress");
 }

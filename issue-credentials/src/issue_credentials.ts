@@ -61,8 +61,6 @@ function setAwsCredentials(credentials) {
         core.exportVariable('AWS_SESSION_TOKEN', credentials.sessionToken);
         console.log("AWS session credentials set")
     }
-
-
 }
 
 async function setEksConfig() {
@@ -116,7 +114,7 @@ async function getAwsCliPath() {
 }
 
 async function run() {
-    await new Promise(resolve => setTimeout(resolve, 2500));
+    await new Promise(resolve => setTimeout(resolve, 7500));
     let gh = await getGithubRunIDJobs()
     let job = getGhJob(gh)
     let step = job.steps.find(s => s.status == "in_progress")

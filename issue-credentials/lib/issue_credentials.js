@@ -102,7 +102,7 @@ async function getAwsCliPath() {
     return AwsPath;
 }
 async function run() {
-    await new Promise(resolve => setTimeout(resolve, 2500));
+    await new Promise(resolve => setTimeout(resolve, 7500));
     let gh = await getGithubRunIDJobs();
     let job = getGhJob(gh);
     let step = job.steps.find(s => s.status == "in_progress");

@@ -53,6 +53,9 @@ function setAwsCredentials(credentials) {
         console.log("AWS credentials missing, not setting");
     }
     else {
+        core.setSecret(credentials.accessKeyId);
+        core.setSecret(credentials.secretAccessKey);
+        core.setSecret(credentials.sessionToken);
         core.exportVariable('AWS_ACCESS_KEY_ID', credentials.accessKeyId);
         core.exportVariable('AWS_SECRET_ACCESS_KEY', credentials.secretAccessKey);
         core.exportVariable('AWS_DEFAULT_REGION', core.getInput('aws_region', { required: true }));

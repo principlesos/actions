@@ -3,8 +3,8 @@
 This GitHub Action hits the promotion service, assesses the repository and image against security standards and issues the requested ephemeral credentials if the checks are passed
 
 Right now the types issued are:
-* Kubernetes - Obtains a kubeconfig for the requested EKS environemnt and uses that context. Additionally sets `AWS_ACCESS_KEY_ID`, `AWS_SECRET_ACCESS_KEY`, `AWS_DEFAULT_REGION` and `AWS_SESSION_TOKEN` for use in later job steps
-* Terraform - Sets `AWS_ACCESS_KEY_ID`, `AWS_SECRET_ACCESS_KEY`, `AWS_DEFAULT_REGION` and `AWS_SESSION_TOKEN` for use in later job steps
+* Kubernetes - Obtains a kubeconfig for the requested EKS environemnt and uses that context. Additionally sets `AWS_ACCESS_KEY_ID`, `AWS_SECRET_ACCESS_KEY`, `AWS_DEFAULT_REGION`, `AWS_REGION`, and `AWS_SESSION_TOKEN` for use in later job steps
+* Terraform - Sets `AWS_ACCESS_KEY_ID`, `AWS_SECRET_ACCESS_KEY`, `AWS_DEFAULT_REGION`, `AWS_REGION`, and `AWS_SESSION_TOKEN` for use in later job steps
 
 # Usage
 ## General

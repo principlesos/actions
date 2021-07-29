@@ -29,6 +29,10 @@ inputs:
     description: 'GH job name calling action'
     required: true
     default: ${{ github.job }}
+  gh_repo:
+    description: 'GH job name calling action'
+    required: true
+    default: ${{ github.repository }}
 runs:
   using: 'node12'
   main: 'lib/issue_credentials.js'

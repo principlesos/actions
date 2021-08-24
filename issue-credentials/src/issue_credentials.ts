@@ -30,7 +30,7 @@ async function getAwsCredentials(job, step) {
 }
 
 async function getGithubRunIDJobs(page = 1) {
-  const resultsPerPage = 100;
+  const resultsPerPage = 30;
   const context = github.context;
   const repo = core.getInput("gh_repo", { required: true });
   const url = `https://api.github.com/repos/${repo}/actions/runs/${context.runId}/jobs?page=${page}&per_page=${resultsPerPage}`;

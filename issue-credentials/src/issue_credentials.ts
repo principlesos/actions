@@ -55,7 +55,7 @@ function getGhJob(runJson) {
   const jobName = core.getInput("gh_job");
 
   const job = runJson.jobs.find(
-    (j) => j.name == jobName && j.status == "in_progress"
+    (j) => j.name === jobName && j.status === "in_progress"
   );
   if (!job) {
     core.setFailed(`Failed to find in_progress job with name ${jobName}`);
@@ -150,12 +150,12 @@ async function run() {
   let gh = await getGithubRunIDJobs();
   let job = getGhJob(gh);
   if (job) {
-    let step = job.steps.find((s) => s.status == "in_progress");
+    let step = job.steps.find((s) => s.status === "in_progress");
     let result = await getAwsCredentials(job, step);
     if (result) {
       setAwsCredentials(result);
       let type = core.getInput("type", { required: true }).toLowerCase();
-      if (type == "kubernetes") {
+      if (type === "kubernetes") {
         setEksConfig();
       }
       return;

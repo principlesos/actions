@@ -21,7 +21,7 @@ async function getAwsCredentials(job, step) {
   console.log("Calling Credentials Endpoint");
   const response: Response = await fetch(url);
   if (!response.ok) {
-    core.setFailed("Failed to recieve credentials from service");
+    core.setFailed("Failed to receive credentials from service");
     console.log(await response.json());
     return false;
   }
@@ -29,10 +29,11 @@ async function getAwsCredentials(job, step) {
   return body;
 }
 
-async function getGithubRunIDJobs() {
+async function getGithubRunIDJobs(page = 1) {
+  const resultsPerPage = 100;
   const context = github.context;
   const repo = core.getInput("gh_repo", { required: true });
-  const url = `https://api.github.com/repos/${repo}/actions/runs/${context.runId}/jobs`;
+  const url = `https://api.github.com/repos/${repo}/actions/runs/${context.runId}/jobs?page=${page}&per_page=${resultsPerPage}`;
   console.log("Calling Github API for additional information");
   const ghToken = core.getInput("gh_token");
   const response = await fetch(url, {
@@ -42,17 +43,26 @@ async function getGithubRunIDJobs() {
       "Content-Type": "application/json",
     },
   });
-  const body = await response.json();
-  return body;
+  const { total_count, jobs } = await response.json();
+  if (total_count > page * resultsPerPage) {
+    const morePages = await getGithubRunIDJobs(page + 1);
+    return { jobs: [...jobs, ...morePages] };
+  }
+  return { jobs };
 }
 
 function getGhJob(runJson) {
-  const job = core.getInput("gh_job");
-  const jobName = job;
-  return runJson.jobs.find(
+  const jobName = core.getInput("gh_job");
+
+  const job = runJson.jobs.find(
     (j) => j.name == jobName && j.status == "in_progress"
   );
+  if (!job) {
+    core.setFailed(`Failed to find in_progress job with name ${jobName}`);
+  }
+  return job;
 }
+
 
 function setAwsCredentials(credentials) {
   if (!credentials.accessKeyId) {
@@ -139,17 +149,19 @@ async function run() {
   await new Promise((resolve) => setTimeout(resolve, 7500));
   let gh = await getGithubRunIDJobs();
   let job = getGhJob(gh);
-  let step = job.steps.find((s) => s.status == "in_progress");
-  let result = await getAwsCredentials(job, step);
-  if (result) {
-    setAwsCredentials(result);
-    let type = core.getInput("type", { required: true }).toLowerCase();
-    if (type == "kubernetes") {
-      setEksConfig();
+  if (job) {
+    let step = job.steps.find((s) => s.status == "in_progress");
+    let result = await getAwsCredentials(job, step);
+    if (result) {
+      setAwsCredentials(result);
+      let type = core.getInput("type", { required: true }).toLowerCase();
+      if (type == "kubernetes") {
+        setEksConfig();
+      }
+      return;
     }
-  } else {
-    console.log("credentials not set");
   }
+  console.log("credentials not set");
 }
 
 run().catch(core.setFailed);

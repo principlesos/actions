@@ -48,12 +48,11 @@ async function getInProgressJob() {
     const resultsPerPage = 50;
     const jobName = core.getInput("gh_job");
     let allJobsWithName;
-    let totalCount;
     for (let attempt = 1; attempt <= maxAttempts; attempt++) {
         console.log(`Checking status of ${jobName}. Attempt: ${attempt}`);
         await new Promise((resolve) => setTimeout(resolve, 5000));
         allJobsWithName = [];
-        totalCount = null;
+        let totalCount;
         let page = 0;
         do {
             page = page + 1;

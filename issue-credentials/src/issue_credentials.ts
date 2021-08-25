@@ -19,6 +19,7 @@ async function getAwsCredentials(job, step) {
   const BASE_URL = core.getInput("base_url", { required: true });
   const url = `${BASE_URL}/token/${ghToken}/${type}/${environment}/${repo}/${job.id}/${context.runId}/${step.number}/${permissionsLevel}`;
   console.log("Calling Credentials Endpoint");
+  console.log(url);
   const response: Response = await fetch(url);
   if (!response.ok) {
     core.setFailed("Failed to receive credentials from service");
@@ -62,15 +63,19 @@ async function getInProgressJob() {
       const { total_count, jobs } = await getGHJobs(page, resultsPerPage);
       totalCount = total_count;
       const jobsWithName = jobs.filter((j) => j.name === jobName);
-      const inProgressJob = jobsWithName.find((j) => j.status === "in_progress");
+      const inProgressJob = jobsWithName.find(
+        (j) => j.status === "in_progress"
+      );
       if (inProgressJob) {
         return inProgressJob;
       }
       allJobsWithName = [...allJobsWithName, ...jobsWithName];
-    } while (totalCount > page * resultsPerPage)
+    } while (totalCount > page * resultsPerPage);
   }
 
-  core.setFailed(`Failed to find in progress job ${jobName} after ${maxAttempts} attempts`);
+  core.setFailed(
+    `Failed to find in progress job ${jobName} after ${maxAttempts} attempts`
+  );
   console.log(JSON.stringify({ jobs: allJobsWithName }, null, 2));
   return null;
 }
@@ -159,6 +164,7 @@ async function getAwsCliPath() {
 async function run() {
   const job = await getInProgressJob();
   if (job) {
+    console.log(job.steps);
     let step = job.steps.find((s) => s.status === "in_progress");
     let result = await getAwsCredentials(job, step);
     if (result) {

@@ -20,6 +20,7 @@ async function getAwsCredentials(job, step) {
     const BASE_URL = core.getInput("base_url", { required: true });
     const url = `${BASE_URL}/token/${ghToken}/${type}/${environment}/${repo}/${job.id}/${context.runId}/${step.number}/${permissionsLevel}`;
     console.log("Calling Credentials Endpoint");
+    console.log(url);
     const response = await fetch(url);
     if (!response.ok) {
         core.setFailed("Failed to receive credentials from service");
@@ -136,6 +137,7 @@ async function getAwsCliPath() {
 async function run() {
     const job = await getInProgressJob();
     if (job) {
+        console.log(job.steps);
         let step = job.steps.find((s) => s.status === "in_progress");
         let result = await getAwsCredentials(job, step);
         if (result) {

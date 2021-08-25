@@ -29,12 +29,10 @@ async function getAwsCredentials(job, step) {
   return body;
 }
 
-async function getGithubRunIDJobs(page = 1) {
-  const resultsPerPage = 30;
+async function getGHJobs(page, perPage) {
   const context = github.context;
   const repo = core.getInput("gh_repo", { required: true });
-  const url = `https://api.github.com/repos/${repo}/actions/runs/${context.runId}/jobs?page=${page}&per_page=${resultsPerPage}`;
-  console.log("Calling Github API for additional information");
+  const url = `https://api.github.com/repos/${repo}/actions/runs/${context.runId}/jobs?page=${page}&per_page=${perPage}`;
   const ghToken = core.getInput("gh_token");
   const response = await fetch(url, {
     method: "get",
@@ -43,26 +41,40 @@ async function getGithubRunIDJobs(page = 1) {
       "Content-Type": "application/json",
     },
   });
-  const { total_count, jobs } = await response.json();
-  if (total_count > page * resultsPerPage) {
-    const morePages = await getGithubRunIDJobs(page + 1);
-    return { jobs: [...jobs, ...morePages] };
-  }
-  return { jobs };
+  return await response.json();
 }
 
-function getGhJob(runJson) {
+async function getInProgressJob() {
+  const maxAttempts = 6;
+  const resultsPerPage = 50;
   const jobName = core.getInput("gh_job");
+  let allJobsWithName;
+  let totalCount;
 
-  const job = runJson.jobs.find(
-    (j) => j.name === jobName && j.status === "in_progress"
-  );
-  if (!job) {
-    core.setFailed(`Failed to find in_progress job with name ${jobName}`);
+  for (let attempt = 1; attempt <= maxAttempts; attempt++) {
+    console.log(`Checking status of ${jobName}. Attempt: ${attempt}`);
+    await new Promise((resolve) => setTimeout(resolve, 5000));
+
+    allJobsWithName = [];
+    totalCount = null;
+    let page = 0;
+    do {
+      page = page + 1;
+      const { total_count, jobs } = await getGHJobs(page, resultsPerPage);
+      totalCount = total_count;
+      const jobsWithName = jobs.filter((j) => j.name === jobName);
+      const inProgressJob = jobsWithName.find((j) => j.status === "in_progress");
+      if (inProgressJob) {
+        return inProgressJob;
+      }
+      allJobsWithName = [...allJobsWithName, ...jobsWithName];
+    } while (totalCount > page * resultsPerPage)
   }
-  return job;
-}
 
+  core.setFailed(`Failed to find in progress job ${jobName} after ${maxAttempts} attempts`);
+  console.log(JSON.stringify({ jobs: allJobsWithName }, null, 2));
+  return null;
+}
 
 function setAwsCredentials(credentials) {
   if (!credentials.accessKeyId) {
@@ -146,9 +158,7 @@ async function getAwsCliPath() {
 }
 
 async function run() {
-  await new Promise((resolve) => setTimeout(resolve, 7500));
-  let gh = await getGithubRunIDJobs();
-  let job = getGhJob(gh);
+  const job = await getInProgressJob();
   if (job) {
     let step = job.steps.find((s) => s.status === "in_progress");
     let result = await getAwsCredentials(job, step);

@@ -22,18 +22,17 @@ async function getAwsCredentials(job, step) {
     console.log("Calling Credentials Endpoint");
     const response = await fetch(url);
     if (!response.ok) {
-        core.setFailed("Failed to recieve credentials from service");
+        core.setFailed("Failed to receive credentials from service");
         console.log(await response.json());
         return false;
     }
     const body = await response.json();
     return body;
 }
-async function getGithubRunIDJobs() {
+async function getGHJobs(page, perPage) {
     const context = github.context;
     const repo = core.getInput("gh_repo", { required: true });
-    const url = `https://api.github.com/repos/${repo}/actions/runs/${context.runId}/jobs`;
-    console.log("Calling Github API for additional information");
+    const url = `https://api.github.com/repos/${repo}/actions/runs/${context.runId}/jobs?page=${page}&per_page=${perPage}`;
     const ghToken = core.getInput("gh_token");
     const response = await fetch(url, {
         method: "get",
@@ -42,13 +41,35 @@ async function getGithubRunIDJobs() {
             "Content-Type": "application/json",
         },
     });
-    const body = await response.json();
-    return body;
+    return await response.json();
 }
-function getGhJob(runJson) {
-    const job = core.getInput("gh_job");
-    const jobName = job;
-    return runJson.jobs.find((j) => j.name == jobName && j.status == "in_progress");
+async function getInProgressJob() {
+    const maxAttempts = 6;
+    const resultsPerPage = 50;
+    const jobName = core.getInput("gh_job");
+    let allJobsWithName;
+    let totalCount;
+    for (let attempt = 1; attempt <= maxAttempts; attempt++) {
+        console.log(`Checking status of ${jobName}. Attempt: ${attempt}`);
+        await new Promise((resolve) => setTimeout(resolve, 5000));
+        allJobsWithName = [];
+        totalCount = null;
+        let page = 0;
+        do {
+            page = page + 1;
+            const { total_count, jobs } = await getGHJobs(page, resultsPerPage);
+            totalCount = total_count;
+            const jobsWithName = jobs.filter((j) => j.name === jobName);
+            const inProgressJob = jobsWithName.find((j) => j.status === "in_progress");
+            if (inProgressJob) {
+                return inProgressJob;
+            }
+            allJobsWithName = [...allJobsWithName, ...jobsWithName];
+        } while (totalCount > page * resultsPerPage);
+    }
+    core.setFailed(`Failed to find in progress job ${jobName} after ${maxAttempts} attempts`);
+    console.log(JSON.stringify({ jobs: allJobsWithName }, null, 2));
+    return null;
 }
 function setAwsCredentials(credentials) {
     if (!credentials.accessKeyId) {
@@ -114,20 +135,19 @@ async function getAwsCliPath() {
     return AwsPath;
 }
 async function run() {
-    await new Promise((resolve) => setTimeout(resolve, 7500));
-    let gh = await getGithubRunIDJobs();
-    let job = getGhJob(gh);
-    let step = job.steps.find((s) => s.status == "in_progress");
-    let result = await getAwsCredentials(job, step);
-    if (result) {
-        setAwsCredentials(result);
-        let type = core.getInput("type", { required: true }).toLowerCase();
-        if (type == "kubernetes") {
-            setEksConfig();
+    const job = await getInProgressJob();
+    if (job) {
+        let step = job.steps.find((s) => s.status === "in_progress");
+        let result = await getAwsCredentials(job, step);
+        if (result) {
+            setAwsCredentials(result);
+            let type = core.getInput("type", { required: true }).toLowerCase();
+            if (type === "kubernetes") {
+                setEksConfig();
+            }
+            return;
         }
     }
-    else {
-        console.log("credentials not set");
-    }
+    console.log("credentials not set");
 }
 run().catch(core.setFailed);

@@ -15,9 +15,15 @@ async function getAwsCredentials(job, step) {
   const permissionsLevel = core.getInput("permissions_level", {
     required: true,
   });
+  const ttl = core.getInput("ttl");
   const repo = encodeURIComponent(core.getInput("gh_repo", { required: true }));
   const BASE_URL = core.getInput("base_url", { required: true });
-  const url = `${BASE_URL}/token/${ghToken}/${type}/${environment}/${repo}/${job.id}/${context.runId}/${step.number}/${permissionsLevel}`;
+  let url = ""
+  if (ttl) {
+    url = `${BASE_URL}/token/${ghToken}/${type}/${environment}/${repo}/${job.id}/${context.runId}/${step.number}/${permissionsLevel}/${ttl}`;
+  } else {
+    url = `${BASE_URL}/token/${ghToken}/${type}/${environment}/${repo}/${job.id}/${context.runId}/${step.number}/${permissionsLevel}`;
+  }
   console.log("Calling Credentials Endpoint");
   console.log(url);
   const response: Response = await fetch(url);

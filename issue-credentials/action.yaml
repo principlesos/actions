@@ -14,6 +14,9 @@ inputs:
   permissions_level:
     description: 'Level of access required ("read-only" or "read-write")'
     required: true
+  ttl:
+    description: 'TTL for credentials'
+    required: false
   base_url:
     description: 'Url endpoint before arguments'
     required: true

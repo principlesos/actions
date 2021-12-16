@@ -9,7 +9,7 @@ inputs:
     description: 'Username/Password for vpn auth'
     required: true
   vpn-ip:
-    description: 'VPN IP '
+    description: 'VPN IP'
     required: true
 runs:
   using: "composite"

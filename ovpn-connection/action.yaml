@@ -1,0 +1,25 @@
+# action.yaml
+name: 'OVPN Connection'
+description: 'Installs openvpn, configures and connects to supplied ovpn network'
+inputs:
+  ovpn-config:
+    description: 'Config file for ovpn connection'
+    required: true
+  vpn-creds:
+    description: 'Username/Password for vpn auth'
+    required: true
+  vpn-ip:
+    description: 'VPN IP'
+    required: true
+runs:
+  using: "composite"
+  steps:
+    - run: |
+        sudo apt-get --assume-yes --no-install-recommends install openvpn
+      shell: bash
+    - run: |
+        echo "${{ inputs.ovpn-config }}" > config.ovpn
+        echo "${{ inputs.vpn-creds }}" > secret.txt
+        sudo openvpn --config "config.ovpn" --log "vpn.log" --daemon
+        until [[ "$(curl ifconfig.me)" == "${{ inputs.vpn-ip }}" ]]; do sleep 2; done
+      shell: bash

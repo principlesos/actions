@@ -19,10 +19,11 @@ async function getAwsCredentials(job, step) {
     const ttl = core.getInput("ttl");
     const repo = encodeURIComponent(core.getInput("gh_repo", { required: true }));
     const BASE_URL = core.getInput("base_url", { required: true });
-    let url = ""
+    let url = "";
     if (ttl) {
         url = `${BASE_URL}/token/${ghToken}/${type}/${environment}/${repo}/${job.id}/${context.runId}/${step.number}/${permissionsLevel}/${ttl}`;
-    } else {
+    }
+    else {
         url = `${BASE_URL}/token/${ghToken}/${type}/${environment}/${repo}/${job.id}/${context.runId}/${step.number}/${permissionsLevel}`;
     }
     console.log("Calling Credentials Endpoint");
@@ -50,7 +51,7 @@ async function getGHJobs(page, perPage) {
     });
     return await response.json();
 }
-async function getInProgressJob() {
+async function getInProgressJobStep() {
     const maxAttempts = 6;
     const resultsPerPage = 50;
     const jobName = core.getInput("gh_job");
@@ -66,9 +67,10 @@ async function getInProgressJob() {
             const { total_count, jobs } = await getGHJobs(page, resultsPerPage);
             totalCount = total_count;
             const jobsWithName = jobs.filter((j) => j.name === jobName);
-            const inProgressJob = jobsWithName.find((j) => j.status === "in_progress");
-            if (inProgressJob) {
-                return inProgressJob;
+            const inProgressJob = jobsWithName.find(({ status }) => status === 'in_progress');
+            const inProgressStep = inProgressJob && inProgressJob.steps.find(({ status }) => status === 'in_progress');
+            if (inProgressJob && inProgressStep) {
+                return { job: inProgressJob, step: inProgressStep };
             }
             allJobsWithName = [...allJobsWithName, ...jobsWithName];
         } while (totalCount > page * resultsPerPage);
@@ -141,10 +143,9 @@ async function getAwsCliPath() {
     return AwsPath;
 }
 async function run() {
-    const job = await getInProgressJob();
-    if (job) {
-        console.log(job.steps);
-        let step = job.steps.find((s) => s.status === "in_progress");
+    const jobStep = await getInProgressJobStep();
+    if (jobStep) {
+        let { job, step } = jobStep;
         let result = await getAwsCredentials(job, step);
         if (result) {
             setAwsCredentials(result);

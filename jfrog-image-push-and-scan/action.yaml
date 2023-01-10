@@ -52,7 +52,7 @@ runs:
         cat build_data.env >> $GITHUB_ENV
       shell: bash
     - run: |
-        if ! command -v jfrog; then
+        if ! command -v jfrog > /dev/null 2>&1; then
           echo "couldn't find jfrog on my path, so i'm going to attempt to install the debian package"
           wget https://releases.jfrog.io/artifactory/jfrog-debs/pool/jfrog-cli/jfrog-cli-1.44.0.x86_64.deb
           sudo apt update

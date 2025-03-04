@@ -21,6 +21,6 @@ runs:
     - run: |
         echo "${{ inputs.ovpn-config }}" > config.ovpn
         echo "${{ inputs.vpn-creds }}" > secret.txt
-        sudo openvpn --config "config.ovpn" --log "vpn.log" --daemon
+        sudo openvpn --config "config.ovpn" --compat-mode 2.3.6 --log "vpn.log" --daemon
         until [[ "$(curl ifconfig.me)" == "${{ inputs.vpn-ip }}" ]]; do sleep 2; done
       shell: bash

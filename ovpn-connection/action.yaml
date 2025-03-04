@@ -22,5 +22,6 @@ runs:
         echo "${{ inputs.ovpn-config }}" > config.ovpn
         echo "${{ inputs.vpn-creds }}" > secret.txt
         sudo openvpn --config "config.ovpn" --log "vpn.log" --daemon
-        until [[ "$(curl -4 ifconfig.me)" == "${{ inputs.vpn-ip }}" ]]; do sleep 2; done
+        echo -n "Waiting to establish VPN connection"
+        until [[ "$(curl -4 -s ifconfig.me)" == "${{ inputs.vpn-ip }}" ]]; do sleep 2 && echo -n ".";  done
       shell: bash

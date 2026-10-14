@@ -29,13 +29,25 @@ async function getAwsCredentials(job, step) {
     console.log("Calling Credentials Endpoint");
     console.log(url);
     const response = await fetch(url);
-    if (!response.ok) {
-        core.setFailed("Failed to receive credentials from service");
-        console.log(await response.json());
-        return false;
+    const text = await response.text();
+    let body;
+    try {
+        body = JSON.parse(text);
     }
-    const body = await response.json();
-    return body;
+    catch (e) {
+        body = text;
+    }
+    return { ok: response.ok, body };
+}
+// The broker checks the step against the same jobs API we read, which lags
+// behind the runner. A step we saw as in_progress (e.g. a stale "Set up job")
+// may have completed by the time the broker looks, so this rejection is worth
+// retrying with a fresh read of the job.
+function isStepNotInProgressRejection(body) {
+    return (body !== null &&
+        typeof body === "object" &&
+        typeof body.message === "string" &&
+        body.message.includes("step not in progress"));
 }
 async function getGHJobs(page, perPage) {
     const context = github.context;
@@ -51,15 +63,19 @@ async function getGHJobs(page, perPage) {
     });
     return await response.json();
 }
-async function getInProgressJob() {
+async function requestCredentials() {
     const maxAttempts = 6;
     const resultsPerPage = 50;
     const jobName = core.getInput("gh_job");
     let allJobsWithName;
+    let inProgressJob;
+    let rejection;
     for (let attempt = 1; attempt <= maxAttempts; attempt++) {
         console.log(`Checking status of ${jobName}. Attempt: ${attempt}`);
         await new Promise((resolve) => setTimeout(resolve, 5000));
         allJobsWithName = [];
+        inProgressJob = undefined;
+        rejection = undefined;
         let totalCount;
         let page = 0;
         do {
@@ -67,15 +83,50 @@ async function getInProgressJob() {
             const { total_count, jobs } = await getGHJobs(page, resultsPerPage);
             totalCount = total_count;
             const jobsWithName = jobs.filter((j) => j.name === jobName);
-            const inProgressJob = jobsWithName.find((j) => j.status === "in_progress");
-            if (inProgressJob) {
-                return inProgressJob;
-            }
+            inProgressJob = jobsWithName.find((j) => j.status === "in_progress");
             allJobsWithName = [...allJobsWithName, ...jobsWithName];
-        } while (totalCount > page * resultsPerPage);
+        } while (!inProgressJob && totalCount > page * resultsPerPage);
+        if (!inProgressJob) {
+            continue;
+        }
+        // The jobs API can report the job as in_progress before any step is.
+        const step = (inProgressJob.steps || []).find((s) => s.status === "in_progress");
+        if (!step) {
+            console.log(`Job ${jobName} is in progress but no step is in progress yet`);
+            continue;
+        }
+        console.log(inProgressJob.steps);
+        const { ok, body } = await getAwsCredentials(inProgressJob, step);
+        if (ok) {
+            return body;
+        }
+        if (!isStepNotInProgressRejection(body)) {
+            core.setFailed("Failed to receive credentials from service");
+            console.log(body);
+            return null;
+        }
+        console.log(`Credentials service saw step ${step.number} (${step.name}) as not in progress, retrying`);
+        rejection = body;
     }
-    core.setFailed(`Failed to find in progress job ${jobName} after ${maxAttempts} attempts`);
-    console.log(JSON.stringify({ jobs: allJobsWithName }, null, 2));
+    if (rejection) {
+        core.setFailed(`Credentials service rejected the in progress step of ${jobName} on all ${maxAttempts} attempts`);
+        console.log(rejection);
+    }
+    else if (inProgressJob) {
+        core.setFailed(`Found in progress job ${jobName} (id ${inProgressJob.id}) but no step was in progress after ${maxAttempts} attempts`);
+    }
+    else {
+        core.setFailed(`Failed to find in progress job ${jobName} after ${maxAttempts} attempts`);
+        console.log(JSON.stringify({ jobs: allJobsWithName }, null, 2));
+    }
+    if (inProgressJob) {
+        const steps = (inProgressJob.steps || []).map(({ name, number, status }) => ({
+            name,
+            number,
+            status,
+        }));
+        console.log(JSON.stringify({ steps }, null, 2));
+    }
     return null;
 }
 function setAwsCredentials(credentials) {
@@ -142,19 +193,14 @@ async function getAwsCliPath() {
     return AwsPath;
 }
 async function run() {
-    const job = await getInProgressJob();
-    if (job) {
-        console.log(job.steps);
-        let step = job.steps.find((s) => s.status === "in_progress");
-        let result = await getAwsCredentials(job, step);
-        if (result) {
-            setAwsCredentials(result);
-            let type = core.getInput("type", { required: true }).toLowerCase();
-            if (type === "kubernetes") {
-                setEksConfig();
-            }
-            return;
+    const result = await requestCredentials();
+    if (result) {
+        setAwsCredentials(result);
+        let type = core.getInput("type", { required: true }).toLowerCase();
+        if (type === "kubernetes") {
+            setEksConfig();
         }
+        return;
     }
     console.log("credentials not set");
 }

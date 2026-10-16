@@ -8,6 +8,11 @@ const toolCache = require("@actions/tool-cache");
 const os = require("os");
 const toolrunner_1 = require("@actions/exec/lib/toolrunner");
 const fetch = require("node-fetch");
+// image-gatekeeper issues deployment credentials (PRIN-8372). The action.yaml
+// default covers callers that omit base_url; this covers callers that still
+// pass the retired CREDENTIALS_BROKER_URL org secret once it is empty or gone,
+// because an input that is present but empty does not fall back to the default.
+const DEFAULT_BASE_URL = "https://image-gatekeeper.mgt10.principles.com/api/v1/credentials";
 async function getAwsCredentials(job, step) {
     const context = github.context;
     const ghToken = core.getInput("gh_token");
@@ -18,7 +23,7 @@ async function getAwsCredentials(job, step) {
     });
     const ttl = core.getInput("ttl");
     const repo = encodeURIComponent(core.getInput("gh_repo", { required: true }));
-    const BASE_URL = core.getInput("base_url", { required: true });
+    const BASE_URL = core.getInput("base_url") || DEFAULT_BASE_URL;
     let url = "";
     if (ttl) {
         url = `${BASE_URL}/token/${ghToken}/${type}/${environment}/${repo}/${job.id}/${context.runId}/${step.number}/${permissionsLevel}/${ttl}`;

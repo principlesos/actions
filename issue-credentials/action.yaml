@@ -18,8 +18,9 @@ inputs:
     description: 'TTL for credentials'
     required: false
   base_url:
-    description: 'Url endpoint before arguments'
-    required: true
+    description: 'Credentials broker url before the /token/... arguments. Defaults to image-gatekeeper; only set it to point at another broker'
+    required: false
+    default: 'https://image-gatekeeper.mgt10.principles.com/api/v1/credentials'
   aws_region:
     description: 'Region for AWS'
     required: true

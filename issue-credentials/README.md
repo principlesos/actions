@@ -1,6 +1,6 @@
 # Get Deployment Credentials
 
-This GitHub Action hits the promotion service, assesses the repository and image against security standards and issues the requested ephemeral credentials if the checks are passed
+This GitHub Action asks [image-gatekeeper](https://github.com/principlesos/image-gatekeeper) for ephemeral AWS credentials for the running job. Gatekeeper verifies the job is really running, holds production environments to the same repository rules it applies before promoting an image, and issues the credentials if the checks pass.
 
 Right now the types issued are:
 
@@ -19,17 +19,15 @@ Right now the types issued are:
 ## General
 
 ```yml
-- uses: principlesos/actions/issue-credentials@v1
+- uses: principlesos/actions/issue-credentials@v2.1.0
   with:
-    base_url: ${{ secrets.CREDENTIALS_BROKER_URL }}
     type: kubernetes
     environment: box
     cluster_name: eks-cluster
     permissions_level: read-write
 ```
 
-We are using the CREDENTIALS_BROKER_URL as an org wide secret so you will not need to set it at the repo level.
-Unfortunately it cant be as a default input so does need to be supplied in the "with" section.
+`base_url` defaults to image-gatekeeper (`https://image-gatekeeper.mgt10.principles.com/api/v1/credentials`), so it no longer needs to be supplied. Workflows that still pass `base_url: ${{ secrets.CREDENTIALS_BROKER_URL }}` keep working: the secret points at the same place, and once it is removed the action falls back to the default on its own. Only set `base_url` to point at a different broker.
 
 types available:
 
@@ -72,8 +70,6 @@ jobs:
     with:
       environment: dev
       caller_job_name: call-reusable-workflow # set to name of calling job
-    secrets:
-      CREDENTIALS_BROKER_URL: ${{ secrets.CREDENTIALS_BROKER_URL }}
 ```
 
 ### Reusable Workflow
@@ -90,16 +86,12 @@ on:
       caller_job_name:
         required: true
         type: string
-    secrets:
-      CREDENTIALS_BROKER_URL:
-        required: true
 jobs:
   reusable-workflow-job:
     ...
     steps:
-      - uses: principlesos/actions/issue-credentials@v1.4.7
+      - uses: principlesos/actions/issue-credentials@v2.1.0
         with:
-          base_url: ${{ secrets.CREDENTIALS_BROKER_URL }}
           type: terraform
           environment: ${{ inputs.environment_name }}
           permissions_level: read-write
